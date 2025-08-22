@@ -25,7 +25,7 @@ const MapView = dynamic(() => import('@/components/MapView'), {
 });
 
 export default function Home() {
-  const mapRef = useRef<MapViewRef>(null);
+  const mapRef = useRef<MapViewRef>(null!);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const {
