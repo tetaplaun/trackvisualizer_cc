@@ -1,18 +1,59 @@
 import { Track, TrackPoint, TrackSegment, TrackStats } from '@/types/track';
 
+interface GPXPoint {
+  lat: number;
+  lon: number;
+  ele?: number;
+  time?: string;
+}
+
+interface GPXTrack {
+  name?: string;
+  points: GPXPoint[];
+}
+
+interface GPXRoute {
+  name?: string;
+  points: GPXPoint[];
+}
+
+interface GPXWaypoint {
+  lat: number;
+  lon: number;
+  ele?: number;
+  name?: string;
+}
+
+interface GPXParserInstance {
+  parse: (gpxText: string) => void;
+  tracks?: GPXTrack[];
+  routes?: GPXRoute[];
+  waypoints?: GPXWaypoint[];
+}
+
+interface GPXParserConstructor {
+  new(): GPXParserInstance;
+}
+
 declare global {
   interface Window {
-    gpxParser: any;
+    gpxParser: GPXParserConstructor;
   }
 }
 
 export async function parseGPXFile(file: File): Promise<Track[]> {
   const text = await file.text();
-  return parseGPXString(text, file.name);
+  return await parseGPXString(text, file.name);
 }
 
-export function parseGPXString(gpxText: string, fileName?: string): Track[] {
-  const GPXParser = typeof window !== 'undefined' ? require('gpxparser') : null;
+export async function parseGPXString(gpxText: string, fileName?: string): Promise<Track[]> {
+  let GPXParser: GPXParserConstructor | null = null;
+  
+  if (typeof window !== 'undefined') {
+    // Dynamic import for client-side
+    const module = await import('gpxparser');
+    GPXParser = module.default || module;
+  }
   
   if (!GPXParser) {
     throw new Error('GPX Parser not available');
@@ -24,10 +65,10 @@ export function parseGPXString(gpxText: string, fileName?: string): Track[] {
   const tracks: Track[] = [];
 
   if (gpx.tracks && gpx.tracks.length > 0) {
-    gpx.tracks.forEach((gpxTrack: any, trackIndex: number) => {
+    gpx.tracks.forEach((gpxTrack: GPXTrack, trackIndex: number) => {
       const segments: TrackSegment[] = [];
       
-      gpxTrack.points.forEach((point: any) => {
+      gpxTrack.points.forEach((point: GPXPoint) => {
         const trackPoint: TrackPoint = {
           lat: point.lat,
           lon: point.lon,
@@ -60,10 +101,10 @@ export function parseGPXString(gpxText: string, fileName?: string): Track[] {
   }
 
   if (gpx.routes && gpx.routes.length > 0) {
-    gpx.routes.forEach((route: any, routeIndex: number) => {
+    gpx.routes.forEach((route: GPXRoute, routeIndex: number) => {
       const segments: TrackSegment[] = [{ points: [] }];
       
-      route.points.forEach((point: any) => {
+      route.points.forEach((point: GPXPoint) => {
         const trackPoint: TrackPoint = {
           lat: point.lat,
           lon: point.lon,
@@ -93,7 +134,7 @@ export function parseGPXString(gpxText: string, fileName?: string): Track[] {
   if (gpx.waypoints && gpx.waypoints.length > 0 && tracks.length === 0) {
     const segments: TrackSegment[] = [{ points: [] }];
     
-    gpx.waypoints.forEach((waypoint: any) => {
+    gpx.waypoints.forEach((waypoint: GPXWaypoint) => {
       const trackPoint: TrackPoint = {
         lat: waypoint.lat,
         lon: waypoint.lon,
