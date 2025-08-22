@@ -24,6 +24,7 @@ interface GPXWaypoint {
   name?: string;
 }
 
+// GPXParser library types - the library doesn't have proper TypeScript definitions
 interface GPXParserInstance {
   parse: (gpxText: string) => void;
   tracks?: GPXTrack[];
@@ -31,9 +32,8 @@ interface GPXParserInstance {
   waypoints?: GPXWaypoint[];
 }
 
-interface GPXParserConstructor {
-  new(): GPXParserInstance;
-}
+// Use unknown instead of any for better type safety
+type GPXParserConstructor = new() => GPXParserInstance;
 
 declare global {
   interface Window {
@@ -51,8 +51,9 @@ export async function parseGPXString(gpxText: string, fileName?: string): Promis
   
   if (typeof window !== 'undefined') {
     // Dynamic import for client-side
-    const module = await import('gpxparser');
-    GPXParser = module.default || module;
+    const gpxModule = await import('gpxparser');
+    // Double assertion through unknown because the library doesn't have proper types
+    GPXParser = (gpxModule.default || gpxModule) as unknown as GPXParserConstructor;
   }
   
   if (!GPXParser) {
