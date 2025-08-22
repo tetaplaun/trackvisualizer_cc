@@ -5,10 +5,13 @@ import dynamic from 'next/dynamic';
 import { MapViewRef } from '@/components/MapView';
 import { FileUploader } from '@/components/FileUploader';
 import { TrackCustomizer } from '@/components/TrackCustomizer';
+import { PhotoUploader } from '@/components/PhotoUploader';
+import { PhotoList } from '@/components/PhotoList';
 import { ExportButton } from '@/components/ExportButton';
 import { useTracks } from '@/hooks/use-tracks';
+import { usePhotos } from '@/hooks/use-photos';
 import { parseGPXFile } from '@/lib/gpx-parser';
-import { Map, Menu, X } from 'lucide-react';
+import { Map, Menu, X, FileText, Camera } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 
@@ -28,6 +31,7 @@ export default function Home() {
   const mapRef = useRef<MapViewRef>(null!);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<'tracks' | 'photos'>('tracks');
   const {
     tracks,
     addTrack,
@@ -36,6 +40,14 @@ export default function Home() {
     toggleTrackVisibility,
     clearAllTracks,
   } = useTracks();
+  const {
+    photos,
+    isProcessing,
+    addMultiplePhotos,
+    removePhoto,
+    togglePhotoVisibility,
+    clearAllPhotos,
+  } = usePhotos();
 
   const handleFileUpload = useCallback(async (file: File) => {
     try {
@@ -103,38 +115,98 @@ export default function Home() {
           ${!isSidebarOpen && 'lg:-translate-x-full'}
         `}>
           <div className="h-full overflow-y-auto p-4 space-y-4">
-            <Card className="p-4">
-              <h2 className="text-lg font-semibold mb-3">Upload GPX File</h2>
-              <FileUploader onFileUpload={handleFileUpload} />
-            </Card>
-
-            <Card className="p-4">
-              <div className="flex items-center justify-between mb-3">
-                <h2 className="text-lg font-semibold">Tracks</h2>
-                {tracks.length > 0 && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={clearAllTracks}
-                    className="text-xs text-destructive hover:text-destructive"
-                  >
-                    Clear All
-                  </Button>
-                )}
+            <Card className="p-2">
+              <div className="flex space-x-1">
+                <Button
+                  variant={activeTab === 'tracks' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setActiveTab('tracks')}
+                  className="flex-1"
+                >
+                  <FileText className="h-4 w-4 mr-2" />
+                  GPX Tracks
+                </Button>
+                <Button
+                  variant={activeTab === 'photos' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setActiveTab('photos')}
+                  className="flex-1"
+                >
+                  <Camera className="h-4 w-4 mr-2" />
+                  Photos
+                </Button>
               </div>
-              <TrackCustomizer
-                tracks={tracks}
-                onUpdateTrackStyle={updateTrackStyle}
-                onToggleVisibility={toggleTrackVisibility}
-                onRemoveTrack={removeTrack}
-              />
             </Card>
 
-            {tracks.length > 0 && (
-              <Card className="p-4">
-                <h2 className="text-lg font-semibold mb-3">Export</h2>
-                <ExportButton mapRef={mapRef} disabled={tracks.length === 0} />
-              </Card>
+            {activeTab === 'tracks' ? (
+              <>
+                <Card className="p-4">
+                  <h2 className="text-lg font-semibold mb-3">Upload GPX File</h2>
+                  <FileUploader onFileUpload={handleFileUpload} />
+                </Card>
+
+                <Card className="p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <h2 className="text-lg font-semibold">Tracks</h2>
+                    {tracks.length > 0 && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={clearAllTracks}
+                        className="text-xs text-destructive hover:text-destructive"
+                      >
+                        Clear All
+                      </Button>
+                    )}
+                  </div>
+                  <TrackCustomizer
+                    tracks={tracks}
+                    onUpdateTrackStyle={updateTrackStyle}
+                    onToggleVisibility={toggleTrackVisibility}
+                    onRemoveTrack={removeTrack}
+                  />
+                </Card>
+
+                {tracks.length > 0 && (
+                  <Card className="p-4">
+                    <h2 className="text-lg font-semibold mb-3">Export</h2>
+                    <ExportButton mapRef={mapRef} disabled={tracks.length === 0} />
+                  </Card>
+                )}
+              </>
+            ) : (
+              <>
+                <Card className="p-4">
+                  <h2 className="text-lg font-semibold mb-3">Upload Photos</h2>
+                  <PhotoUploader 
+                    onPhotosUpload={async (files) => {
+                      await addMultiplePhotos(files);
+                    }}
+                    isProcessing={isProcessing}
+                  />
+                </Card>
+                
+                {photos.length > 0 && (
+                  <>
+                    <PhotoList
+                      photos={photos}
+                      onRemovePhoto={removePhoto}
+                      onToggleVisibility={togglePhotoVisibility}
+                    />
+                    
+                    <Card className="p-4">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={clearAllPhotos}
+                        className="w-full text-destructive hover:text-destructive"
+                      >
+                        Clear All Photos
+                      </Button>
+                    </Card>
+                  </>
+                )}
+              </>
             )}
           </div>
         </aside>
@@ -148,7 +220,7 @@ export default function Home() {
           )}
           
           <div className="w-full h-full">
-            <MapView ref={mapRef} tracks={tracks} />
+            <MapView ref={mapRef} tracks={tracks} photos={photos} />
           </div>
         </main>
       </div>
