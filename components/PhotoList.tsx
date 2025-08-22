@@ -5,6 +5,7 @@ import { Photo } from '@/types/photo';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { X, Eye, EyeOff, MapPin, MapPinOff, Calendar } from 'lucide-react';
+import Image from 'next/image';
 
 interface PhotoListProps {
   photos: Photo[];
@@ -49,16 +50,18 @@ export function PhotoList({ photos, onRemovePhoto, onToggleVisibility }: PhotoLi
             key={photo.id}
             className="flex items-start space-x-2 p-2 bg-gray-50 rounded-md hover:bg-gray-100 transition-colors"
           >
-            <div className="relative flex-shrink-0">
+            <div className="relative flex-shrink-0 w-16 h-16">
               {photo.thumbnailUrl && (
-                <img 
+                <Image 
                   src={photo.thumbnailUrl} 
                   alt={photo.name}
-                  className="w-16 h-16 object-cover rounded"
+                  fill
+                  className="object-cover rounded"
+                  sizes="64px"
                 />
               )}
               {!photo.visible && (
-                <div className="absolute inset-0 bg-black/50 rounded flex items-center justify-center">
+                <div className="absolute inset-0 bg-black/50 rounded flex items-center justify-center z-10">
                   <EyeOff className="h-4 w-4 text-white" />
                 </div>
               )}

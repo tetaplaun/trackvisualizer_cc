@@ -6,6 +6,7 @@ import { Track } from '@/types/track';
 import { Photo } from '@/types/photo';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
+import Image from 'next/image';
 
 interface IconDefaultPrototype extends L.Icon.Default {
   _getIconUrl?: (name: string) => string;
@@ -176,12 +177,15 @@ const MapView = forwardRef<MapViewRef, MapViewProps>(({ tracks, photos = [], cla
             >
               <Popup>
                 <div className="p-2 min-w-[200px] max-w-[300px]">
-                  <img 
-                    src={photo.thumbnailUrl || photo.dataUrl} 
-                    alt={photo.name}
-                    className="w-full h-auto rounded mb-2"
-                    style={{ maxHeight: '200px', objectFit: 'contain' }}
-                  />
+                  <div className="relative w-full h-[200px] mb-2">
+                    <Image 
+                      src={photo.thumbnailUrl || photo.dataUrl} 
+                      alt={photo.name}
+                      fill
+                      className="rounded object-contain"
+                      sizes="300px"
+                    />
+                  </div>
                   <p className="text-sm font-medium truncate">{photo.name}</p>
                   {photo.timestamp && (
                     <p className="text-xs text-gray-500">
